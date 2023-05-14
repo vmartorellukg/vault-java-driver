@@ -33,7 +33,7 @@ public class Mounts extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig.address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      *
      * final MountResponse response = vault.sys().mounts().list();
      * final Map<String, Mount> mounts = response.getMounts();
@@ -82,7 +82,7 @@ public class Mounts extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig.address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      *
      * final MountPayload payload = new MountPayload()
      *                                       .defaultLeaseTtl(TimeToLive.of(86400, TimeUnit.SECONDS))
@@ -149,7 +149,7 @@ public class Mounts extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig.address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      *
      * final MountResponse response = vault.mounts().disable("pki/mount/point/path");
      *
@@ -197,7 +197,7 @@ public class Mounts extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig.address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      *
      * final MountResponse response = vault.mounts().read("pki/mount/point/path");
      * final Mount mount = response.getMount();
@@ -248,7 +248,7 @@ public class Mounts extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig.address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      *
      * final MountPayload payload = new MountPayload()
      *                                   .defaultLeaseTtl(TimeToLive.of(12, TimeUnit.HOURS))

@@ -2,6 +2,7 @@ package io.github.jopenlibs.vault.vault.api.sys;
 
 import io.github.jopenlibs.vault.Vault;
 import io.github.jopenlibs.vault.VaultConfig;
+import io.github.jopenlibs.vault.VaultImpl;
 import io.github.jopenlibs.vault.json.JsonObject;
 import io.github.jopenlibs.vault.response.WrapResponse;
 import io.github.jopenlibs.vault.vault.VaultTestUtils;
@@ -43,7 +44,7 @@ public class WrappingWrapTest {
     public void check_wrap_request_response() throws Exception {
         VaultConfig vaultConfig = new VaultConfig().address("http://127.0.0.1:8999")
                 .token("wrappedToken").build();
-        Vault vault = new Vault(vaultConfig);
+        Vault vault = Vault.create(vaultConfig);
 
         WrapResponse response = vault.sys().wrapping().wrap(
                 new JsonObject()

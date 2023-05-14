@@ -1,6 +1,6 @@
 package io.github.jopenlibs.vault.api;
 
-import io.github.jopenlibs.vault.Vault;
+import io.github.jopenlibs.vault.VaultImpl;
 import io.github.jopenlibs.vault.VaultConfig;
 import io.github.jopenlibs.vault.VaultException;
 import io.github.jopenlibs.vault.api.sys.Sys;
@@ -27,7 +27,7 @@ import java.util.UUID;
  * <code>Vault</code> in a DSL-style builder pattern.  See the Javadoc comments of each
  * <code>public</code> method for usage examples.</p>
  *
- * @see Vault#auth()
+ * @see VaultImpl#auth()
  */
 public class Auth extends OperationsBase {
 
@@ -273,7 +273,7 @@ public class Auth extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig().address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      * final AuthResponse response = vault.auth().createToken(new TokenRequest().withTtl("1h"));
      *
      * final String token = response.getAuthClientToken();
@@ -295,7 +295,7 @@ public class Auth extends OperationsBase {
      * <blockquote>
      * <pre>{@code
      * final VaultConfig config = new VaultConfig().address(...).token(...).build();
-     * final Vault vault = new Vault(config);
+     * final Vault vault = Vault.create(config);
      * final AuthResponse response = vault.auth().createToken(new TokenRequest().withTtl("1h"));
      *
      * final String token = response.getAuthClientToken();
@@ -1132,7 +1132,7 @@ public class Auth extends OperationsBase {
      *                                  .address("https://127.0.0.1:8200")
      *                                  .sslConfig(sslConfig)
      *                                  .build();
-     * final Vault vault = new Vault(vaultConfig);
+     * final Vault vault = Vault.create(vaultConfig);
      *
      * final AuthResponse response = vault.auth().loginByCert();
      * final String token = response.getAuthClientToken();
@@ -1160,7 +1160,7 @@ public class Auth extends OperationsBase {
      *                                  .address("https://127.0.0.1:8200")
      *                                  .sslConfig(sslConfig)
      *                                  .build();
-     * final Vault vault = new Vault(vaultConfig);
+     * final Vault vault = Vault.create(vaultConfig);
      *
      * final AuthResponse response = vault.auth().loginByCert();
      * final String token = response.getAuthClientToken();
