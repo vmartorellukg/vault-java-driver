@@ -9,19 +9,11 @@ import io.github.jopenlibs.vault.api.sys.Leases;
 import io.github.jopenlibs.vault.api.sys.Seal;
 import io.github.jopenlibs.vault.api.sys.Sys;
 import io.github.jopenlibs.vault.api.sys.mounts.Mounts;
-import io.github.jopenlibs.vault.json.Json;
-import io.github.jopenlibs.vault.json.JsonObject;
-import io.github.jopenlibs.vault.json.JsonValue;
-import io.github.jopenlibs.vault.rest.Rest;
-import io.github.jopenlibs.vault.rest.RestException;
-import io.github.jopenlibs.vault.rest.RestResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 public interface Vault {
 
-    static Vault create(VaultConfig vaultConfig){
+    static Vault create(VaultConfig vaultConfig) {
         return new VaultImpl(vaultConfig);
     }
 
@@ -91,16 +83,6 @@ public interface Vault {
      * @return The implementing class for Vault's auth operations.
      */
     Sys sys();
-
-    /**
-     * Returns the implementing class for operations on Vault's <code>/v1/sys/*</code> REST
-     * endpoints
-     *
-     * @return The implementing class for Vault's auth operations.
-     */
-    public Sys sys() {
-        return new Sys(vaultConfig);
-    }
 
     /**
      * Returns the implementing class for Vault's PKI secret backend (i.e. <code>/v1/pki/*</code>

@@ -85,7 +85,7 @@ public class PutTests {
     @Test
     public void testPut_UpdateParams() throws RestException {
         final RestResponse restResponse = new Rest()
-                .url(this.URL+"?hot=cold")
+                .url(this.URL + "?hot=cold")
                 .parameter("foo", "bar")
                 .parameter("apples", "oranges")
                 .parameter("multi part", "this parameter has whitespace in its name and value")
@@ -95,7 +95,7 @@ public class PutTests {
 
         final String jsonString = new String(restResponse.getBody(), StandardCharsets.UTF_8);
         final JsonObject jsonObject = Json.parse(jsonString).asObject();
-        assertEquals(this.URL+"?hot=cold", jsonObject.getString("URL", null));
+        assertEquals(this.URL + "?hot=cold", jsonObject.getString("URL", null));
         final JsonObject args = jsonObject.get("args").asObject();
         assertEquals("cold", args.getString("hot", null));
         final JsonObject form = jsonObject.get("args").asObject();

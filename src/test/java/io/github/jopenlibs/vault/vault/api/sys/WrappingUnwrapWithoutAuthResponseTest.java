@@ -2,7 +2,6 @@ package io.github.jopenlibs.vault.vault.api.sys;
 
 import io.github.jopenlibs.vault.Vault;
 import io.github.jopenlibs.vault.VaultConfig;
-import io.github.jopenlibs.vault.VaultImpl;
 import io.github.jopenlibs.vault.json.Json;
 import io.github.jopenlibs.vault.json.JsonObject;
 import io.github.jopenlibs.vault.response.UnwrapResponse;

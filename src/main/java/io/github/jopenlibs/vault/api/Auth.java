@@ -1,8 +1,8 @@
 package io.github.jopenlibs.vault.api;
 
-import io.github.jopenlibs.vault.VaultImpl;
 import io.github.jopenlibs.vault.VaultConfig;
 import io.github.jopenlibs.vault.VaultException;
+import io.github.jopenlibs.vault.VaultImpl;
 import io.github.jopenlibs.vault.api.sys.Sys;
 import io.github.jopenlibs.vault.json.Json;
 import io.github.jopenlibs.vault.json.JsonObject;
@@ -993,7 +993,8 @@ public class Auth extends OperationsBase {
     }
 
     /**
-     * <p>Basic login operation to authenticate to an JWT backend with custom authentication path.  Example usage:</p>
+     * <p>Basic login operation to authenticate to an JWT backend with custom authentication path.
+     * Example usage:</p>
      *
      * <blockquote>
      * <pre>{@code
@@ -1094,7 +1095,8 @@ public class Auth extends OperationsBase {
     }
 
     /**
-     * Basic login operation to authenticate to a kubernetes backend with custom path. Example usage:
+     * Basic login operation to authenticate to a kubernetes backend with custom path. Example
+     * usage:
      *
      * <blockquote>
      *
@@ -1113,7 +1115,8 @@ public class Auth extends OperationsBase {
      * @return The auth token, with additional response metadata
      * @throws VaultException If any error occurs, or unexpected response received from Vault
      */
-    public AuthResponse loginByKubernetes(final String role, final String jwt, final String authPath)
+    public AuthResponse loginByKubernetes(final String role, final String jwt,
+            final String authPath)
             throws VaultException {
         return loginByJwt("kubernetes", role, jwt, authPath);
     }
