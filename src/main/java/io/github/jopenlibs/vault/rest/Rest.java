@@ -2,26 +2,30 @@ package io.github.jopenlibs.vault.rest;
 
 import io.github.jopenlibs.vault.SslConfig;
 import io.github.jopenlibs.vault.VaultConfig;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.TreeMap;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -189,26 +193,6 @@ public class Rest {
     }
 
     /**
-     * <p>Adds an optional header to be sent with the HTTP request.</p>
-     * *
-     * <p> The value, if null, will skip adding this header to the request.</p>
-     *
-     * <p>This method may be chained together repeatedly, to pass multiple headers with a request.
-     * When the request is ultimately sent, the headers will be sorted by their names.</p>
-     *
-     * @param name The raw header name
-     * @param value The raw header value
-     * @return This object, with a header added, ready for other builder-pattern config methods or
-     * an HTTP verb method
-     * @deprecated use {@link #header(String, String)} instead.
-     */
-    @Deprecated
-    public Rest optionalHeader(final String name, final String value) {
-        header(name, value);
-        return this;
-    }
-
-    /**
      * <p>The number of seconds to wait before giving up on establishing an HTTP(S) connection.</p>
      *
      * @param connectTimeoutSeconds Number of seconds to wait for an HTTP(S) connection to
@@ -284,30 +268,10 @@ public class Rest {
      * @throws RestException If an error occurs, or an unexpected response received
      */
     public RestResponse get() throws RestException {
-        if (urlString == null) {
-            throw new RestException("No URL is set");
-        }
         try {
-            if (!parameters.isEmpty()) {
-                // Append parameters to existing query string, or create one
-                if (urlString.indexOf('?') == -1) {
-                    urlString = urlString + "?" + parametersToQueryString();
-                } else {
-                    urlString = urlString + "&" + parametersToQueryString();
-                }
-            }
-            // Initialize HTTP(S) connection, and set any header values
-            final URLConnection connection = initURLConnection(urlString, "GET");
-            for (final Map.Entry<String, String> header : headers.entrySet()) {
-                connection.setRequestProperty(header.getKey(), header.getValue());
-            }
+            var request = buildRequest(true);
 
-            // Get the resulting status code
-            final int statusCode = connectionStatus(connection);
-            // Download and parse response
-            final String mimeType = connection.getContentType();
-            final byte[] body = responseBodyBytes(connection);
-            return new RestResponse(statusCode, mimeType, body);
+            return send(request.GET().build());
         } catch (Exception e) {
             throw new RestException(e);
         }
@@ -361,30 +325,9 @@ public class Rest {
      * @throws RestException If an error occurs, or an unexpected response received
      */
     public RestResponse delete() throws RestException {
-        if (urlString == null) {
-            throw new RestException("No URL is set");
-        }
         try {
-            if (!parameters.isEmpty()) {
-                // Append parameters to existing query string, or create one
-                if (urlString.indexOf('?') == -1) {
-                    urlString = urlString + "?" + parametersToQueryString();
-                } else {
-                    urlString = urlString + "&" + parametersToQueryString();
-                }
-            }
-            // Initialize HTTP(S) connection, and set any header values
-            final URLConnection connection = initURLConnection(urlString, "DELETE");
-            for (final Map.Entry<String, String> header : headers.entrySet()) {
-                connection.setRequestProperty(header.getKey(), header.getValue());
-            }
-
-            // Get the resulting status code
-            final int statusCode = connectionStatus(connection);
-            // Download and parse response
-            final String mimeType = connection.getContentType();
-            final byte[] body = responseBodyBytes(connection);
-            return new RestResponse(statusCode, mimeType, body);
+            var request = this.buildRequest(true);
+            return send(request.DELETE().build());
         } catch (Exception e) {
             throw new RestException(e);
         }
@@ -401,104 +344,31 @@ public class Rest {
      * @return The result of the HTTP operation
      */
     private RestResponse postOrPutImpl(final boolean doPost) throws RestException {
-        if (urlString == null) {
-            throw new RestException("No URL is set");
-        }
         try {
-            // Initialize HTTP connection, and set any header values
-            URLConnection connection;
-            if (doPost) {
-                connection = initURLConnection(urlString, "POST");
-            } else {
-                connection = initURLConnection(urlString, "PUT");
-            }
-            for (final Map.Entry<String, String> header : headers.entrySet()) {
-                connection.setRequestProperty(header.getKey(), header.getValue());
-            }
+            // Initialize HTTP(S) connection, and set any header values
+            var request = this.buildRequest(false);
+            request.header("Accept-Charset", "UTF-8");
 
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Accept-Charset", "UTF-8");
-
-            // If a body payload has been provided, then it takes precedence.  Otherwise, look for any additional
-            // parameters to send as form field values.  Parameters sent via the base URL query string are left
-            // as-is regardless.
+            BodyPublisher payload;
             if (body != null) {
-                final OutputStream outputStream = connection.getOutputStream();
-                outputStream.write(body);
-                outputStream.close();
+                payload = BodyPublishers.ofByteArray(body);
             } else if (!parameters.isEmpty()) {
-                connection.setRequestProperty("Content-Type",
+                request.header("Content-Type",
                         "application/x-www-form-urlencoded;charset=UTF-8");
-                final OutputStream outputStream = connection.getOutputStream();
-                outputStream.write(parametersToQueryString().getBytes(StandardCharsets.UTF_8));
-                outputStream.close();
-            }
-
-            // Get the resulting status code
-            final int statusCode = connectionStatus(connection);
-            // Download and parse response
-            final String mimeType = connection.getContentType();
-            final byte[] body = responseBodyBytes(connection);
-            return new RestResponse(statusCode, mimeType, body);
-        } catch (IOException e) {
-            throw new RestException(e);
-        }
-    }
-
-    /**
-     * <p>This helper method constructs a new <code>HttpURLConnection</code> or
-     * <code>HttpsURLConnection</code>, configured with all of the settings that were passed in
-     * when first initializing this <code>Rest</code> instance (e.g. timeout thresholds, SSL
-     * verification, SSL certificate data).</p>
-     *
-     * @param urlString The URL to which this connection will be made
-     * @param method The applicable request method (e.g. "GET", "POST", etc)
-     * @throws RestException If the URL cannot be successfully parsed, or if there are errors
-     * processing an SSL cert, etc.
-     */
-    private URLConnection initURLConnection(final String urlString, final String method)
-            throws RestException {
-        URLConnection connection = null;
-        try {
-            final URL url = new URL(urlString);
-            connection = url.openConnection();
-
-            // Timeout settings, if applicable
-            if (connectTimeoutSeconds != null) {
-                connection.setConnectTimeout(connectTimeoutSeconds * 1000);
-            }
-            if (readTimeoutSeconds != null) {
-                connection.setReadTimeout(readTimeoutSeconds * 1000);
-            }
-
-            // SSL settings, if applicable
-            if (connection instanceof HttpsURLConnection) {
-                final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) connection;
-                if (sslVerification != null && !sslVerification) {
-                    // SSL verification disabled
-                    httpsURLConnection.setSSLSocketFactory(DISABLED_SSL_CONTEXT.getSocketFactory());
-                    httpsURLConnection.setHostnameVerifier((s, sslSession) -> true);
-                } else if (sslContext != null) {
-                    // Cert file supplied
-                    httpsURLConnection.setSSLSocketFactory(sslContext.getSocketFactory());
-                }
-                httpsURLConnection.setRequestMethod(method);
-            } else if (connection instanceof HttpURLConnection) {
-                final HttpURLConnection httpURLConnection = (HttpURLConnection) connection;
-                httpURLConnection.setRequestMethod(method);
+                payload = BodyPublishers.ofByteArray(
+                        parametersToQueryString().getBytes(StandardCharsets.UTF_8));
             } else {
-                final String message = "URL string " + urlString
-                        + " cannot be parsed as an instance of HttpURLConnection or HttpsURLConnection";
-                throw new RestException(message);
+                payload = BodyPublishers.noBody();
             }
 
-            return connection;
-        } catch (Exception e) {
-            throw new RestException(e);
-        } finally {
-            if (connection instanceof HttpURLConnection) {
-                ((HttpURLConnection) connection).disconnect();
+            if (doPost) {
+                return send(request.POST(payload).build());
+            } else {
+                return send(request.PUT(payload).build());
             }
+
+        } catch (IOException | InterruptedException | URISyntaxException e) {
+            throw new RestException(e);
         }
     }
 
@@ -510,100 +380,83 @@ public class Rest {
      * @return A url-encoded URL query string
      */
     private String parametersToQueryString() {
-        final StringBuilder queryString = new StringBuilder();
-        final List<Map.Entry<String, String>> params = new ArrayList<>(parameters.entrySet());
-        for (int index = 0; index < params.size(); index++) {
-            if (index > 0) {
-                queryString.append('&');
-            }
-            final String name = params.get(index).getKey();
-            final String value = params.get(index).getValue();
-            queryString.append(name).append('=').append(value);
-        }
-        return queryString.toString();
+        final var sj = new StringJoiner("&");
+        parameters.forEach((name, value) -> sj.add(name + "=" + value));
+
+        return sj.toString();
     }
 
     /**
-     * <p>This helper method downloads the body of an HTTP response (e.g. a clob of JSON text) as
-     * binary data.</p>
+     * This helper method initialize {@link HttpClient} and send {@link HttpRequest} to remote
+     * resource
      *
-     * @param connection An active HTTP(S) connection
-     * @return The body payload, downloaded from the HTTP connection response
+     * @param req an {@link HttpRequest} request
+     * @return A {@link RestResponse} instance
+     * @throws IOException if connection fails
+     * @throws InterruptedException if connection is interrupted
      */
-    private byte[] responseBodyBytes(final URLConnection connection) throws RestException {
-        try {
-            final InputStream inputStream;
-            final int responseCode = this.connectionStatus(connection);
-            if (200 <= responseCode && responseCode <= 299) {
-                inputStream = connection.getInputStream();
-            } else {
-                if (connection instanceof HttpsURLConnection) {
-                    final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) connection;
-                    inputStream = httpsURLConnection.getErrorStream();
-                } else {
-                    final HttpURLConnection httpURLConnection = (HttpURLConnection) connection;
-                    inputStream = httpURLConnection.getErrorStream();
-                }
-            }
-            return handleResponseInputStream(inputStream);
-        } catch (IOException e) {
-            return new byte[0];
+    private RestResponse send(HttpRequest req) throws IOException, InterruptedException {
+        final var client = HttpClient.newBuilder();
+        if (connectTimeoutSeconds != null) {
+            client.connectTimeout(Duration.of(connectTimeoutSeconds, ChronoUnit.SECONDS));
         }
+
+        if (sslVerification != null && !sslVerification) {
+            client.sslContext(DISABLED_SSL_CONTEXT);
+        } else if (sslContext != null) {
+            client.sslContext(sslContext);
+        }
+
+        var response = client.build().send(req, BodyHandlers.ofString());
+
+        // Get the resulting status code
+        final var statusCode = response.statusCode();
+
+        // Download and parse response
+        final var mimeType = response.headers().firstValue("Content-Type").orElse("");
+        final var body = response.body().getBytes();
+
+        return new RestResponse(statusCode, mimeType, body);
     }
 
 
     /**
-     * <p>This helper method extracts the HTTP(S) status code from a <code>URLConnection</code>,
-     * provided that it is an <code>HttpURLConnection</code> or a
-     * <code>HttpsUrlConnection</code>.</p>
+     * This helper method build an {@link HttpRequest.Builder} object used to send requests to
+     * remote resource
      *
-     * @param connection An active HTTP(S) connection
+     * @param isGetOrDelete sets if request is called for a GET or DELETE request instead of POST or
+     * PUT request
+     * @return a {@link HttpRequest.Builder} bojnect
+     * @throws URISyntaxException if passed URL isn't valid
+     * @throws RestException if isn't passed an URL
      */
-    private int connectionStatus(final URLConnection connection) throws IOException, RestException {
-        int statusCode;
-        if (connection instanceof HttpsURLConnection) {
-            final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) connection;
-            statusCode = httpsURLConnection.getResponseCode();
-        } else if (connection instanceof HttpURLConnection) {
-            final HttpURLConnection httpURLConnection = (HttpURLConnection) connection;
-            statusCode = httpURLConnection.getResponseCode();
-        } else {
-            final String className = connection != null ? connection.getClass().getName() : "null";
-            throw new RestException("Expecting a URLConnection of type "
-                    + HttpURLConnection.class.getName()
-                    + " or "
-                    + HttpsURLConnection.class.getName()
-                    + ", found "
-                    + className);
-        }
-        return statusCode;
-    }
+    private Builder buildRequest(Boolean isGetOrDelete) throws URISyntaxException, RestException {
+        Optional.ofNullable(urlString).orElseThrow(() -> new RestException("No URL is set"));
 
-    /**
-     * <p>This method handles the response stream from the connection.</p>
-     *
-     * @param inputStream The input stream from the connection.
-     * @return The body payload, downloaded from the HTTP connection response
-     */
-    protected byte[] handleResponseInputStream(final InputStream inputStream) {
-        try {
-            // getErrorStream() can return null so handle it.
-            if (inputStream != null) {
-                final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        var uri = new URI(urlString);
+        var params = isGetOrDelete ? parametersToQueryString() : "";
+        var query = params;
 
-                int bytesRead;
-                final byte[] bytes = new byte[16384];
-                while ((bytesRead = inputStream.read(bytes, 0, bytes.length)) != -1) {
-                    byteArrayOutputStream.write(bytes, 0, bytesRead);
-                }
-
-                byteArrayOutputStream.flush();
-                return byteArrayOutputStream.toByteArray();
-            } else {
-                return new byte[0];
+        if (uri.getQuery() != null) {
+            query = uri.getQuery();
+            if (!params.isEmpty()) {
+                query = uri.getQuery() + "&" + params;
             }
-        } catch (IOException e) {
-            return new byte[0];
         }
+        uri = new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(),
+                uri.getPath(), query, uri.getFragment());
+
+        // Initialize HTTP(S) connection, and set any header values
+        var request = HttpRequest.newBuilder()
+                .version(Version.HTTP_1_1)
+                .uri(uri);
+
+        headers.forEach(request::header);
+
+        if (readTimeoutSeconds != null) {
+            request.timeout(Duration.of(readTimeoutSeconds, ChronoUnit.SECONDS));
+        }
+
+        return request;
     }
 }
