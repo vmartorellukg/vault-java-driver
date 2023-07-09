@@ -5,20 +5,15 @@ solution from HashiCorp.
 
 This driver strives to implement Vault's full HTTP API, along with supporting functionality such as
 automatic retry handling. It does so without relying on any other external libraries beyond the Java
-standard library, and is compatible with Java 8 and up. So it will play nice with all of your
+standard library, and is compatible with Java 11 and up. So it will play nice with all of your
 projects, greenfield and legacy alike, without causing conflicts with any other dependency.
-
-NOTE:  Although the binary artifact produced by the project is backwards-compatible with Java 8, you
-do need JDK 9 or higher to modify or build the source code of this library itself.
-
 
 Fork explanation
 -------------------------------
 BetterCloud's [vault-java-driver](https://github.com/BetterCloud/vault-java-driver) is one of the
-most commonly used Java clients for Hashicorp, but has had no activity or releases since December
-
-2019. The project is not
-      maintaining [by author](https://github.com/BetterCloud/vault-java-driver/pull/245#issuecomment-954066376).
+most commonly used Java clients for Hashicorp, but has had no activity or releases since
+December 2019. The project is not
+maintaining [by author](https://github.com/BetterCloud/vault-java-driver/pull/245#issuecomment-954066376).
 
 This Change
 -----------
@@ -48,7 +43,7 @@ Gradle:
 
 ```
 dependencies {
-    implementation 'io.github.jopenlibs:vault-java-driver:5.4.0'
+    implementation 'io.github.jopenlibs:vault-java-driver:6.0.0'
 }
 ```
 
@@ -58,7 +53,7 @@ Maven:
 <dependency>
     <groupId>io.github.jopenlibs</groupId>
     <artifactId>vault-java-driver</artifactId>
-    <version>5.4.0</version>
+    <version>6.0.0</version>
 </dependency>
 ```
 
@@ -191,8 +186,7 @@ file).
 
 If you are only using basic SSL, then no keystore need be provided. However, if you would like to
 use Vault's TLS Certificate auth backend for client side auth, then you need to provide a JKS
-keystore
-containing your client-side certificate and private key:
+keystore containing your client-side certificate and private key:
 
 `.keyStore(object, password)` - Supply an in-memory `java.security.KeyStore` file containing a
 client certificate and private key, and the password needed to access it (can be null). Can be
@@ -252,8 +246,7 @@ EAR file).
 
 `.clientKeyPemUTF8(contents)` - The string contents extracted from the PEM file. For Java to parse
 the certificate properly, there must be a line-break in between the certificate header and body (see
-the `SslConfig`
-Javadocs for more detail).
+the `SslConfig` Javadocs for more detail).
 
 
 
@@ -310,6 +303,13 @@ and may require modifications in your code to migrate. Changes to the minor vers
 number) should represent non-breaking changes. The third number represents any very minor bugfix
 patches.
 
+* **6.0.0**: This release contains the following updates:
+    * Port to Java 11 [(Issue #22)](https://github.com/jopenlibs/vault-java-driver/issues/22)
+    * Added missing module-info and package-info
+      informations [(PR #37)](https://github.com/jopenlibs/vault-java-driver/pull/37)
+    * Add public interface with factory methods, hide implementation [(PR #38)](https://github.com/jopenlibs/vault-java-driver/pull/38)
+    * Upgrade gradle version to 7.6 [(PR #39)](https://github.com/jopenlibs/vault-java-driver/pull/39)
+    * Rewritten Rest Client using HttpClient [(PR #42)](https://github.com/jopenlibs/vault-java-driver/pull/42)
 * **5.4.0**: This release contains the following updates:
     * Added wrapped TTL when write a logical
       secret [(PR #33)](https://github.com/jopenlibs/vault-java-driver/pull/33)
