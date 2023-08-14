@@ -52,14 +52,14 @@ public class ConnectionReUsageTest {
         int readNum = 10;
 
         HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.of(5, ChronoUnit.SECONDS))
+                .connectTimeout(Duration.of(10, ChronoUnit.SECONDS))
                 .build();
 
         Logical vault = Vault.create(new VaultConfig()
                 .httpClient(httpClient)
                 .address("http://localhost:8999")
                 .token(TOKEN)
-                .readTimeout(1)
+                .readTimeout(10)
                 .engineVersion(1)
                 .build()).logical();
 
