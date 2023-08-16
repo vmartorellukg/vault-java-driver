@@ -43,7 +43,7 @@ Gradle:
 
 ```
 dependencies {
-    implementation 'io.github.jopenlibs:vault-java-driver:6.0.0'
+    implementation 'io.github.jopenlibs:vault-java-driver:6.1.0'
 }
 ```
 
@@ -53,7 +53,7 @@ Maven:
 <dependency>
     <groupId>io.github.jopenlibs</groupId>
     <artifactId>vault-java-driver</artifactId>
-    <version>6.0.0</version>
+    <version>6.1.0</version>
 </dependency>
 ```
 
@@ -277,6 +277,8 @@ Vault's HTTP API:
 * `logical()`: Contains core operations such as reading and writing secrets.
 * `auth()`: Exposes methods for working with Vault's various auth backends (e.g. to
   programmatically retrieve a token by authenticating with a username and password).
+* `database()`: Operations on the Database backend (e.g. create and delete roles, generate
+   credentials).
 * `pki()`: Operations on the PKI backend (e.g. create and delete roles, issue certificate
   credentials).
 * `debug()`: Health check endpoints.
@@ -303,6 +305,11 @@ and may require modifications in your code to migrate. Changes to the minor vers
 number) should represent non-breaking changes. The third number represents any very minor bugfix
 patches.
 
+* **6.1.0**: This release contains the following updates:
+    * Fixed missed quotes in documentation (#43)
+    * Add possibility to pass preconfigured http client to reuse http/tls resources for consequent requests **(#44)**
+    * Rest: configure HTTP/1.1 version as default for client instead of request (#47)
+    * Updated minimum TLS version (#49)
 * **6.0.0**: This release contains the following updates:
     * Port to Java 11 [(Issue #22)](https://github.com/jopenlibs/vault-java-driver/issues/22)
     * Added missing module-info and package-info
